@@ -1,0 +1,70 @@
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// 
+// File: Outline.txt
+// 
+// Author: Ren Yifei, yfren@cs.hku.hk
+//
+// Desc: Shader file for applying parameters to vertices from previous calculated data by GP-GPU
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+//
+// Globals
+//
+
+extern matrix WorldViewMatrix;
+extern matrix ProjMatrix;
+extern float  StrokeWidth;
+
+static vector White = {1.0f, 1.0f, 1.0f, 1.0f};
+
+//
+// Structures
+//
+
+struct VS_INPUT
+{
+    vector position			: POSITION;
+    vector normal			: NORMAL0;
+    vector silhouetteWidth  : NORMAL1; 
+    vector silhouetteAlpha  : NORMAL2;
+    vector texCoord			: TEXCOORD;
+};
+
+struct VS_OUTPUT
+{
+    vector position : POSITION;
+    float2 uvCoords : TEXCOORD;
+    vector diffuse  : COLOR;
+};
+
+//
+// Main
+//
+
+VS_OUTPUT Main(VS_INPUT input)
+{
+    // zero out each member in output
+    VS_OUTPUT output = (VS_OUTPUT)0;
+
+    // transform position to view space
+    input.position = mul(input.position, WorldViewMatrix);
+
+	input.normal.w      = 0.0f;
+    input.silhouetteWidth.w = 0.0f;
+    input.silhouetteAlpha.w = 0.0f;
+
+    input.normal = mul(input.normal, WorldViewMatrix);
+    
+    input.position += StrokeWidth * input.normal * input.silhouetteWidth.z;
+     
+    // transform to homogeneous clip space
+    output.position		= mul(input.position, ProjMatrix);
+	output.uvCoords.x	= input.texCoord.x;
+	output.uvCoords.y	= input.texCoord.y;
+	output.diffuse		= White;
+	
+	output.diffuse.w	= 1.0 - input.silhouetteAlpha.x;
+    
+    return output; 
+}

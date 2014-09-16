@@ -1,0 +1,79 @@
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// 
+// File: toon.txt
+// 
+// Author: Ren Yifei, yfren@cs.hku.hk
+//
+// Desc: Shader file for block color effect
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+//
+// Globals
+//
+
+extern matrix WorldViewMatrix;
+extern matrix WorldViewProjMatrix;
+extern vector Color;
+extern vector LightDirection;
+
+//
+// Structures
+//
+
+struct VS_INPUT
+{
+    vector position : POSITION;
+    vector normal   : NORMAL;
+};
+
+struct VS_OUTPUT
+{
+    vector position : POSITION;
+    float2 uvCoords : TEXCOORD;
+    vector diffuse  : COLOR;
+};
+
+
+//
+// Main
+//
+
+VS_OUTPUT Main(VS_INPUT input)
+{
+    VS_OUTPUT output = (VS_OUTPUT)0;
+    
+    output.position = mul(input.position, WorldViewProjMatrix);
+
+	vector LightDir = LightDirection;
+    LightDir.w = 0.0f;
+    input.normal.w   = 0.0f;
+    LightDir   = mul(LightDir, WorldViewMatrix);
+    input.normal     = mul(input.normal, WorldViewMatrix);
+
+    //
+    // Compute the 1D texture coordinate for toon rendering.
+    //
+    float u = dot(LightDir, input.normal);
+
+    if( u < 0.0f )
+        u = 0.0f;
+
+    // 
+    // Set other tex coord to middle.
+    //
+    float v = 0.5f;
+
+    output.uvCoords.x = u;
+    output.uvCoords.y = v;
+
+    // save color
+    output.diffuse = Color;
+    
+    return output;
+}
+
+
+
+
+
